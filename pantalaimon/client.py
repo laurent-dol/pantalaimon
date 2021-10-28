@@ -786,7 +786,7 @@ class PanClient(AsyncClient):
 
     async def loop_stop(self):
         """Stop the client loop."""
-        logger.info("Stopping the sync loop")
+        logger.info(f"Stopping the sync loop for {self.user_id}")
 
         if self.task and not self.task.done():
             self.task.cancel()
