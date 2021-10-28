@@ -47,6 +47,7 @@ from nio import (
     RoomKeyRequest,
     RoomKeyRequestCancellation,
     SyncResponse,
+    SyncError,
 )
 from nio.crypto import Sas
 from nio.store import SqliteStore
@@ -227,6 +228,7 @@ class PanClient(AsyncClient):
 
         self.add_response_callback(self.keys_query_cb, KeysQueryResponse)
         self.add_response_callback(self.sync_tasks, SyncResponse)
+        self.add_response_callback(self.sync_error, SyncError)
 
     def store_message_cb(self, room, event):
         assert INDEXING_ENABLED
@@ -442,6 +444,11 @@ class PanClient(AsyncClient):
                 await self.history_fetch_queue.put(task)
                 self.new_fetch_task.set()
                 self.new_fetch_task.clear()
+
+    async def sync_error(self, response):
+        logger.info(f"SyncError for {self.user_id} : {response.message} {response.status_code}")
+        await self.loop_stop()
+        
 
     async def keys_query_cb(self, response):
         if response.changed:
