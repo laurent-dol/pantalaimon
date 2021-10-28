@@ -447,7 +447,9 @@ class PanClient(AsyncClient):
 
     async def sync_error(self, response):
         logger.info(f"SyncError for {self.user_id} : {response.message} {response.status_code}")
-        await self.loop_stop()
+        if response.status_code == "M_UNKNOWN_TOKEN":            
+            await self.loop_stop()
+            logger.info(f"Has stopped loop for {self.user_id}")
         
 
     async def keys_query_cb(self, response):
