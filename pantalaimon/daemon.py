@@ -569,26 +569,31 @@ class ProxyDaemon:
         self.client_info[access_token] = client
         self.store.save_server_user(self.name, user_id)
 
+        isNewPanClient = 0
+
         if user_id in self.pan_clients:
             logger.info(
                 f"Background sync client already exists for {user_id},"
                 f" not starting new one"
             )
-            return
 
-        pan_client = PanClient(
-            self.name,
-            self.store,
-            self.conf,
-            self.homeserver_url,
-            self.send_queue,
-            user_id,
-            store_path=self.data_dir,
-            ssl=self.ssl,
-            proxy=self.proxy,
-            store_class=self.client_store_class,
-            media_info=self.media_info,
-        )
+            # update token cause it can be a new one after a new login
+            pan_client = self.pan_clients[user_id]            
+        else:
+            pan_client = PanClient(
+                self.name,
+                self.store,
+                self.conf,
+                self.homeserver_url,
+                self.send_queue,
+                user_id,
+                store_path=self.data_dir,
+                ssl=self.ssl,
+                proxy=self.proxy,
+                store_class=self.client_store_class,
+                media_info=self.media_info,
+            )
+            isNewPanClient = 1
 
         if password == "":
             if device_id is None:
@@ -606,8 +611,6 @@ class ProxyDaemon:
             if not isinstance(response, LoginResponse):
                 await pan_client.close()
                 return
-
-        logger.info(f"Succesfully started new background sync client for " f"{user_id}")
 
         await self.send_ui_message(
             UpdateUsersMessage(self.name, user_id, pan_client.device_id)
@@ -629,7 +632,11 @@ class ProxyDaemon:
                 user_id, pan_client.device_id, pan_client.access_token
             )
 
-        pan_client.start_loop()
+        if isNewPanClient == 1:
+            logger.info(f"Succesfully started new background sync client for " f"{user_id}")
+            pan_client.start_loop()
+        else:
+            logger.info(f"Succesfully updated background sync client for " f"{user_id}")
 
     async def login(self, request):
         try:
