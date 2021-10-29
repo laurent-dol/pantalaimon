@@ -40,6 +40,7 @@ class PanConfigParser(configparser.ConfigParser):
                 "HistoryFetchDelay": "3000",
                 "DebugEncryption": "False",
                 "DropOldKeys": "False",
+                "SyncLoopSleep":"100",
             },
             converters={
                 "address": parse_address,
@@ -124,6 +125,8 @@ class ServerConfig:
             requests in seconds.
         drop_old_keys (bool): Should Pantalaimon only keep the most recent
             decryption key around.
+        sync_loop_sleep (int): The sleep time, if any, between successful sync loop iterations in milliseconds.
+
     """
 
     name = attr.ib(type=str)
@@ -141,6 +144,7 @@ class ServerConfig:
     indexing_batch_size = attr.ib(type=int, default=100)
     history_fetch_delay = attr.ib(type=int, default=3)
     drop_old_keys = attr.ib(type=bool, default=False)
+    sync_loop_sleep = attr.ib(type=int, default=100)
 
 
 @attr.s
@@ -235,6 +239,15 @@ class PanConfig:
                 listen_set.add(listen_tuple)
                 drop_old_keys = section.getboolean("DropOldKeys")
 
+
+                sync_loop_sleep = section.getint("SyncLoopSleep")
+
+                if not 100 <= sync_loop_sleep:
+                    raise PanConfigError(
+                        "The sync loop sleep needs to be "
+                        "a positive integer greater or equal than 100 "
+                    )
+
                 server_conf = ServerConfig(
                     section_name,
                     homeserver,
@@ -249,6 +262,7 @@ class PanConfig:
                     indexing_batch_size,
                     history_fetch_delay / 1000,
                     drop_old_keys,
+                    sync_loop_sleep,
                 )
 
                 self.servers[section_name] = server_conf

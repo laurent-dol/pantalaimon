@@ -536,14 +536,14 @@ class PanClient(AsyncClient):
                 )
                 await self.send_update_device(device)
 
-    def start_loop(self, loop_sleep_time=100):
+    def start_loop(self):
         """Start a loop that runs forever and keeps on syncing with the server.
 
         The loop can be stopped with the stop_loop() method.
         """
         assert not self.task
 
-        logger.info(f"Starting sync loop for {self.user_id}")
+        logger.info(f"Starting sync loop for {self.user_id} with loop_sleep_time= {self.pan_conf.sync_loop_sleep}")
 
         loop = asyncio.get_event_loop()
 
@@ -562,7 +562,7 @@ class PanClient(AsyncClient):
                 sync_filter,
                 full_state=True,
                 since=next_batch,
-                loop_sleep_time=loop_sleep_time,
+                loop_sleep_time=self.pan_conf.sync_loop_sleep,
             )
         )
         self.task = task
