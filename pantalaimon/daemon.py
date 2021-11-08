@@ -997,7 +997,7 @@ class ProxyDaemon:
                         )
 
                     media_info.to_content(content, upload_info.mimetype)
-                    if content["info"].get("thumbnail_url", False):
+                    if "info" in content and content["info"].get("thumbnail_url", False):
                         (
                             thumb_upload_info,
                             thumb_media_info,
